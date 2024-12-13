@@ -10,19 +10,39 @@ on:
   workflow_dispatch:
    
 env:
-  # Change these values if you have forked it for your own works
-  # Use Lowercase vaue of your Username
   GITHUB_USERNAME: Dakkshesh
   GITHUB_EMAIL: dakkshesh5@gmail.com
-  GITHUB_ORG: neutron-projects
+  GITHUB_ORG: dakkshesh07
+  IMAGE_NAME: docker-images
 
   GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
-  # Image name and tag. MUST be lowercase
-  IMAGE_NAME: docker-image
-
 jobs:
-  full:
+  devel:
+    runs-on: ubuntu-22.04
+    env:
+      IMAGE_TAG: arch-devel
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configuring git
+        run: |
+          git config --global user.name $GITHUB_USERNAME
+          git config --global user.email $GITHUB_EMAIL
+      - name: Logging in to Docker
+        run: |
+          echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
+      - name: Building the Image
+        run: |
+          docker build -t ghcr.io/${GITHUB_ORG}/${IMAGE_NAME}:${IMAGE_TAG} --target arch-devel .
+          echo "Build Completed Successfully!"
+      - name: Pushing the Image
+        run: |
+          docker push ghcr.io/${GITHUB_ORG}/${IMAGE_NAME}:${IMAGE_TAG}
+
+  minimal:
     runs-on: ubuntu-22.04
     env:
       IMAGE_TAG: arch
@@ -40,81 +60,7 @@ jobs:
           echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
       - name: Building the Image
         run: |
-          docker build -t ghcr.io/${GITHUB_ORG}/${IMAGE_NAME}:${IMAGE_TAG} --target full .
-          echo "Build Completed Successfully!"
-      - name: Pushing the Image
-        run: |
-          docker push ghcr.io/${GITHUB_ORG}/${IMAGE_NAME}:${IMAGE_TAG}
-
-  minimal:
-    runs-on: ubuntu-22.04
-    env:
-      IMAGE_TAG: arch-minimal
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configuring git
-        run: |
-          git config --global user.name $GITHUB_USERNAME
-          git config --global user.email $GITHUB_EMAIL
-      - name: Logging in to Docker
-        run: |
-          echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
-      - name: Building the Image
-        run: |
-          docker build -t ghcr.io/${GITHUB_ORG}/${IMAGE_NAME}:${IMAGE_TAG} --target minimal .
-          echo "Build Completed Successfully!"
-      - name: Pushing the Image
-        run: |
-          docker push ghcr.io/${GITHUB_ORG}/${IMAGE_NAME}:${IMAGE_TAG}
-
-  with-tc:
-    runs-on: ubuntu-22.04
-    needs: minimal
-    env:
-      IMAGE_TAG: arch-wtc
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configuring git
-        run: |
-          git config --global user.name $GITHUB_USERNAME
-          git config --global user.email $GITHUB_EMAIL
-      - name: Logging in to Docker
-        run: |
-          echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
-      - name: Building the Image
-        run: |
-          docker build -t ghcr.io/${GITHUB_ORG}/${IMAGE_NAME}:${IMAGE_TAG} --target wtc .
-          echo "Build Completed Successfully!"
-      - name: Pushing the Image
-        run: |
-          docker push ghcr.io/${GITHUB_ORG}/${IMAGE_NAME}:${IMAGE_TAG}
-
-  deprecated:
-    runs-on: ubuntu-22.04
-    needs: minimal
-    env:
-      IMAGE_TAG: arch-neutron
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configuring git
-        run: |
-          git config --global user.name $GITHUB_USERNAME
-          git config --global user.email $GITHUB_EMAIL
-      - name: Logging in to Docker
-        run: |
-          echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
-      - name: Building the Image
-        run: |
-          docker build -t ghcr.io/${GITHUB_ORG}/${IMAGE_NAME}:${IMAGE_TAG} --target deprecated .
+          docker build -t ghcr.io/${GITHUB_ORG}/${IMAGE_NAME}:${IMAGE_TAG} --target arch .
           echo "Build Completed Successfully!"
       - name: Pushing the Image
         run: |

@@ -1,0 +1,14 @@
+base-devel
+bc
+bison
+ccache
+clang
+cmake
+cpio
+flex
+libelf
+lld
+llvm
+ninja
+openssl
+uboot-tools
