@@ -60,7 +60,9 @@ WORKDIR /home/auruser
 USER auruser
 
 # AUR (ALHP mirrorlist setup)
+RUN pacman -S binutils --noconfirm
 RUN paru -S --noconfirm alhp-keyring alhp-mirrorlist
+RUN pacman -R binutils --noconfirm
 RUN paru -Sccd --noconfirm
 
 # ALHP
