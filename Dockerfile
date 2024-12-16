@@ -42,22 +42,22 @@ RUN cat /etc/minimal_packages.txt | xargs pacman -S --noconfirm
 RUN reflector --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
 RUN pacman -Syyu --noconfirm
 
-# Setup auruser
-RUN useradd -m auruser && \
-    echo 'auruser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
-WORKDIR /home/auruser
-USER auruser
-
 # Install prebuilt paru
 WORKDIR /tmp/paru
 RUN PARU_VER=$(curl -s https://api.github.com/repos/Morganamilo/paru/releases/latest | grep -Po '"tag_name":\s*"\K[^"]+') \
     && wget "https://github.com/Morganamilo/paru/releases/download/${PARU_VER}/paru-${PARU_VER}-x86_64.tar.zst" \
     && tar -xf "paru-${PARU_VER}-x86_64.tar.zst" \
     && mv paru /usr/bin/paru \
+    && chmod 644 /usr/bin/paru \
+    && chmod +x /usr/bin/paru \
     && mv paru.conf /etc/paru.conf \
-    && mv man/paru.8 /usr/share/man/man8/paru.8 \
-    && mv man/paru.conf.5 /usr/share/man/man5/paru.conf.5 \
-    && mv completions/bash /usr/share/bash-completion/completions/paru.bash
+    && chmod 644 /etc/paru.conf
+
+# Setup auruser
+RUN useradd -m auruser && \
+    echo 'auruser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+WORKDIR /home/auruser
+USER auruser
 
 # AUR (ALHP mirrorlist setup)
 RUN paru -S --noconfirm alhp-keyring alhp-mirrorlist
@@ -109,22 +109,22 @@ RUN cat /etc/minimal_packages.txt | xargs pacman -S --noconfirm
 RUN reflector --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
 RUN pacman -Syyu --noconfirm
 
-# Setup auruser
-RUN useradd -m auruser && \
-    echo 'auruser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
-WORKDIR /home/auruser
-USER auruser
-
 # Install prebuilt paru
 WORKDIR /tmp/paru
 RUN PARU_VER=$(curl -s https://api.github.com/repos/Morganamilo/paru/releases/latest | grep -Po '"tag_name":\s*"\K[^"]+') \
     && wget "https://github.com/Morganamilo/paru/releases/download/${PARU_VER}/paru-${PARU_VER}-x86_64.tar.zst" \
     && tar -xf "paru-${PARU_VER}-x86_64.tar.zst" \
     && mv paru /usr/bin/paru \
+    && chmod 644 /usr/bin/paru \
+    && chmod +x /usr/bin/paru \
     && mv paru.conf /etc/paru.conf \
-    && mv man/paru.8 /usr/share/man/man8/paru.8 \
-    && mv man/paru.conf.5 /usr/share/man/man5/paru.conf.5 \
-    && mv completions/bash /usr/share/bash-completion/completions/paru.bash
+    && chmod 644 /etc/paru.conf
+
+# Setup auruser
+RUN useradd -m auruser && \
+    echo 'auruser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+WORKDIR /home/auruser
+USER auruser
 
 # AUR (ALHP mirrorlist setup)
 RUN paru -S --noconfirm alhp-keyring alhp-mirrorlist
