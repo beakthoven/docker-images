@@ -43,6 +43,7 @@ RUN reflector --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirr
 RUN pacman -Syyu --noconfirm
 
 # Install prebuilt paru
+RUN pacman -S binutils --noconfirm
 WORKDIR /tmp/paru
 RUN PARU_VER=$(curl -s https://api.github.com/repos/Morganamilo/paru/releases/latest | grep -Po '"tag_name":\s*"\K[^"]+') \
     && wget "https://github.com/Morganamilo/paru/releases/download/${PARU_VER}/paru-${PARU_VER}-x86_64.tar.zst" \
@@ -60,14 +61,13 @@ WORKDIR /home/auruser
 USER auruser
 
 # AUR (ALHP mirrorlist setup)
-RUN pacman -S binutils --noconfirm
 RUN paru -S --noconfirm alhp-keyring alhp-mirrorlist
-RUN pacman -R binutils --noconfirm
 RUN paru -Sccd --noconfirm
 
 # ALHP
 USER root
 WORKDIR /
+RUN pacman -R binutils --noconfirm
 RUN sed -i "/\[core-x86-64-v3\]/,/Include/"'s/^#//' /etc/pacman.conf
 RUN sed -i "/\[extra-x86-64-v3\]/,/Include/"'s/^#//' /etc/pacman.conf
 RUN pacman -Syy --noconfirm
