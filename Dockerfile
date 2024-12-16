@@ -37,7 +37,7 @@ RUN pacman-key --init && \
     pacman-key --populate
 
 # Packages for our use (Update mirrorlist to get new packages before ALHP)
-RUN pacman -Syy --noconfirm && pacman -S base-devel git sudo --noconfirm
+RUN pacman -Syy --noconfirm
 RUN cat /etc/minimal_packages.txt | xargs pacman -S --noconfirm
 RUN reflector --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
 RUN pacman -Syyu --noconfirm
@@ -48,16 +48,20 @@ RUN useradd -m auruser && \
 WORKDIR /home/auruser
 USER auruser
 
-# Build and install paru
-RUN export MAKEFLAGS="-j$(nproc --all)"
-WORKDIR /tmp
-RUN git clone https://aur.archlinux.org/paru.git
+# Install prebuilt paru
 WORKDIR /tmp/paru
-RUN makepkg -si --noconfirm
+RUN PARU_VER=$(curl -s https://api.github.com/repos/Morganamilo/paru/releases/latest | grep -Po '"tag_name":\s*"\K[^"]+') \
+    && wget "https://github.com/Morganamilo/paru/releases/download/${PARU_VER}/paru-${PARU_VER}-x86_64.tar.zst" \
+    && tar -xf "paru-${PARU_VER}-x86_64.tar.zst" \
+    && mv paru /usr/bin/paru \
+    && mv paru.conf /etc/paru.conf \
+    && mv man/paru.8 /usr/share/man/man8/paru.8 \
+    && mv man/paru.conf.5 /usr/share/man/man5/paru.conf.5 \
+    && mv completions/bash /usr/share/bash-completion/completions/paru.bash
 
 # AUR (ALHP mirrorlist setup)
 RUN paru -S --noconfirm alhp-keyring alhp-mirrorlist
-RUN paru -Sccd
+RUN paru -Sccd --noconfirm
 
 # ALHP
 USER root
@@ -68,8 +72,7 @@ RUN pacman -Syy --noconfirm
 
 # Remove unwanted and update
 RUN pacman -R reflector rsync --noconfirm
-RUN base_devel_pkgs=$(pacman -Qgq base-devel) && \
-    pacman -R --noconfirm --cascade $base_devel_pkgs
+RUN pacman -Qdtq | xargs -r pacman -Rns --noconfirm
 RUN pacman -Syyu --noconfirm
 
 # Cleanup
@@ -101,7 +104,7 @@ RUN pacman-key --init && \
     pacman-key --populate
 
 # Packages for our use (Update mirrorlist to get new packages before ALHP)
-RUN pacman -Syy --noconfirm && pacman -S base-devel git sudo --noconfirm
+RUN pacman -Syy --noconfirm && pacman -S base-devel --noconfirm
 RUN cat /etc/minimal_packages.txt | xargs pacman -S --noconfirm
 RUN reflector --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
 RUN pacman -Syyu --noconfirm
@@ -112,16 +115,20 @@ RUN useradd -m auruser && \
 WORKDIR /home/auruser
 USER auruser
 
-# Build and install paru
-RUN export MAKEFLAGS="-j$(nproc --all)"
-WORKDIR /tmp
-RUN git clone https://aur.archlinux.org/paru.git
+# Install prebuilt paru
 WORKDIR /tmp/paru
-RUN makepkg -si --noconfirm
+RUN PARU_VER=$(curl -s https://api.github.com/repos/Morganamilo/paru/releases/latest | grep -Po '"tag_name":\s*"\K[^"]+') \
+    && wget "https://github.com/Morganamilo/paru/releases/download/${PARU_VER}/paru-${PARU_VER}-x86_64.tar.zst" \
+    && tar -xf "paru-${PARU_VER}-x86_64.tar.zst" \
+    && mv paru /usr/bin/paru \
+    && mv paru.conf /etc/paru.conf \
+    && mv man/paru.8 /usr/share/man/man8/paru.8 \
+    && mv man/paru.conf.5 /usr/share/man/man5/paru.conf.5 \
+    && mv completions/bash /usr/share/bash-completion/completions/paru.bash
 
 # AUR (ALHP mirrorlist setup)
 RUN paru -S --noconfirm alhp-keyring alhp-mirrorlist
-RUN paru -Sccd
+RUN paru -Sccd --noconfirm
 
 # ALHP
 USER root
