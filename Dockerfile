@@ -16,7 +16,7 @@ RUN apk add arch-install-scripts pacman-makepkg curl zstd && \
 
 # Install the base packages
 RUN pacman-key --init && pacman-key --populate
-RUN chmod +x /usr/local/bin/pacstrap-docker && pacstrap-docker /rootfs base base-devel git sudo
+RUN chmod +x /usr/local/bin/pacstrap-docker && pacstrap-docker /rootfs base
 
 #################
 # Minimal image #
@@ -37,6 +37,7 @@ RUN pacman-key --init && \
     pacman-key --populate
 
 # Packages for our use (Update mirrorlist to get new packages before ALHP)
+RUN pacman -Syy --noconfirm && pacman -S base-devel git sudo --noconfirm
 RUN cat /etc/minimal_packages.txt | xargs pacman -S --noconfirm
 RUN reflector --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
 RUN pacman -Syyu --noconfirm
@@ -100,6 +101,7 @@ RUN pacman-key --init && \
     pacman-key --populate
 
 # Packages for our use (Update mirrorlist to get new packages before ALHP)
+RUN pacman -Syy --noconfirm && pacman -S base-devel git sudo --noconfirm
 RUN cat /etc/minimal_packages.txt | xargs pacman -S --noconfirm
 RUN reflector --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
 RUN pacman -Syyu --noconfirm
