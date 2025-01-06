@@ -18,6 +18,32 @@ RUN apk add arch-install-scripts pacman-makepkg curl zstd && \
 RUN pacman-key --init && pacman-key --populate
 RUN chmod +x /usr/local/bin/pacstrap-docker && pacstrap-docker /rootfs base
 
+# AUR prebuilts
+FROM ghcr.io/dakkshesh07/docker-images:arch-devel AS build-aur
+WORKDIR /home/auruser
+USER auruser
+RUN git clone https://aur.archlinux.org/paru-bin.git paru && \
+    cd paru && makepkg -s --noconfirm
+
+RUN mkdir -p /home/auruser/alhp && \
+    cd /home/auruser/alhp && \
+    git clone https://aur.archlinux.org/alhp-keyring.git && \
+    git clone https://aur.archlinux.org/alhp-mirrorlist.git && \
+    cd alhp-keyring && makepkg -s --noconfirm && cd .. && \
+    cd alhp-mirrorlist && makepkg -s --noconfirm
+
+WORKDIR /
+USER root
+RUN ls -l /home/auruser/paru && ls -l /home/auruser/alhp/*
+RUN mkdir -p /build/alhp
+RUN rm -f /home/auruser/paru/*-debug-*.pkg.tar.zst && \
+    mv /home/auruser/paru/*.pkg.tar.zst /build/ && \
+    mv /home/auruser/alhp/*/*.pkg.tar.zst /build/alhp/
+RUN ls -l /build/alhp/ && \
+    ls -l /build/
+
+
+
 #################
 # Minimal image #
 #################
@@ -43,31 +69,19 @@ RUN reflector --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirr
 RUN pacman -Syyu --noconfirm
 
 # Install prebuilt paru
-RUN pacman -S binutils --noconfirm
-WORKDIR /tmp/paru
-RUN PARU_VER=$(curl -s https://api.github.com/repos/Morganamilo/paru/releases/latest | grep -Po '"tag_name":\s*"\K[^"]+') \
-    && wget "https://github.com/Morganamilo/paru/releases/download/${PARU_VER}/paru-${PARU_VER}-x86_64.tar.zst" \
-    && tar -xf "paru-${PARU_VER}-x86_64.tar.zst" \
-    && mv paru /usr/bin/paru \
-    && chmod 644 /usr/bin/paru \
-    && chmod +x /usr/bin/paru \
-    && mv paru.conf /etc/paru.conf \
-    && chmod 644 /etc/paru.conf
+COPY --from=build-aur /build/paru-*.pkg.tar.zst /tmp/paru.pkg.tar.zst
+RUN pacman -U /tmp/paru.pkg.tar.zst --noconfirm && rm /tmp/paru.pkg.tar.zst
 
-# Setup auruser
+# Setup auruser (for paru)
 RUN useradd -m auruser && \
     echo 'auruser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
-WORKDIR /home/auruser
-USER auruser
 
-# AUR (ALHP mirrorlist setup)
-RUN paru -S --noconfirm alhp-keyring alhp-mirrorlist
+# ALHP installation
+COPY --from=build-aur /build/alhp/*.pkg.tar.zst /tmp/alhp/
+RUN pacman -U /tmp/alhp/*.pkg.tar.zst --noconfirm && rm -rf /tmp/alhp
 RUN paru -Sccd --noconfirm
 
-# ALHP
-USER root
-WORKDIR /
-RUN pacman -R binutils --noconfirm
+# ALHP mirrorlist setup
 RUN sed -i "/\[core-x86-64-v3\]/,/Include/"'s/^#//' /etc/pacman.conf
 RUN sed -i "/\[extra-x86-64-v3\]/,/Include/"'s/^#//' /etc/pacman.conf
 RUN pacman -Syy --noconfirm
@@ -112,29 +126,19 @@ RUN reflector --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirr
 RUN pacman -Syyu --noconfirm
 
 # Install prebuilt paru
-WORKDIR /tmp/paru
-RUN PARU_VER=$(curl -s https://api.github.com/repos/Morganamilo/paru/releases/latest | grep -Po '"tag_name":\s*"\K[^"]+') \
-    && wget "https://github.com/Morganamilo/paru/releases/download/${PARU_VER}/paru-${PARU_VER}-x86_64.tar.zst" \
-    && tar -xf "paru-${PARU_VER}-x86_64.tar.zst" \
-    && mv paru /usr/bin/paru \
-    && chmod 644 /usr/bin/paru \
-    && chmod +x /usr/bin/paru \
-    && mv paru.conf /etc/paru.conf \
-    && chmod 644 /etc/paru.conf
+COPY --from=build-aur /build/paru-*.pkg.tar.zst /tmp/paru.pkg.tar.zst
+RUN pacman -U /tmp/paru.pkg.tar.zst --noconfirm && rm /tmp/paru.pkg.tar.zst
 
-# Setup auruser
+# Setup auruser (for paru)
 RUN useradd -m auruser && \
     echo 'auruser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
-WORKDIR /home/auruser
-USER auruser
 
-# AUR (ALHP mirrorlist setup)
-RUN paru -S --noconfirm alhp-keyring alhp-mirrorlist
+# AHLP installation
+COPY --from=build-aur /build/alhp/*.pkg.tar.zst /tmp/alhp/
+RUN pacman -U /tmp/alhp/*.pkg.tar.zst --noconfirm && rm -rf /tmp/alhp
 RUN paru -Sccd --noconfirm
 
-# ALHP
-USER root
-WORKDIR /
+# ALHP mirrorlist setup
 RUN sed -i "/\[core-x86-64-v3\]/,/Include/"'s/^#//' /etc/pacman.conf
 RUN sed -i "/\[extra-x86-64-v3\]/,/Include/"'s/^#//' /etc/pacman.conf
 RUN pacman -Syyu --noconfirm
