@@ -29,7 +29,7 @@ RUN mkdir -p /home/auruser/alhp && \
     cd /home/auruser/alhp && \
     git clone https://aur.archlinux.org/alhp-keyring.git && \
     git clone https://aur.archlinux.org/alhp-mirrorlist.git && \
-    cd alhp-keyring && makepkg -s --noconfirm && cd .. && \
+    cd alhp-keyring && makepkg -s --skippgpcheck --noconfirm && cd .. && \
     cd alhp-mirrorlist && makepkg -s --noconfirm
 
 WORKDIR /
