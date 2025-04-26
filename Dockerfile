@@ -19,7 +19,7 @@ RUN pacman-key --init && pacman-key --populate
 RUN chmod +x /usr/local/bin/pacstrap-docker && pacstrap-docker /rootfs base
 
 # AUR prebuilts
-FROM ghcr.io/dakkshesh07/docker-images:arch-devel AS build-aur
+FROM ghcr.io/beakthoven/docker-images:arch-devel AS build-aur
 WORKDIR /home/auruser
 USER auruser
 RUN git clone https://aur.archlinux.org/paru-bin.git paru && \

@@ -1,67 +1,44 @@
-name: Build Images
+name: Build and Push Docker Images
 
 on:
   push:
     branches:
       - main
   schedule:
-      # Every Saturday at 1:30AM UTC
-      - cron: "30 01 * * 6"
+    # Every Saturday at 01:30 UTC
+    - cron: "30 01 * * 6"
   workflow_dispatch:
-   
+
 env:
-  GITHUB_USERNAME: Dakkshesh
-  GITHUB_EMAIL: dakkshesh5@gmail.com
-  GITHUB_ORG: dakkshesh07
+  GITHUB_ORG: beakthoven
   IMAGE_NAME: docker-images
 
-  GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-
 jobs:
-  devel:
-    runs-on: ubuntu-22.04
-    env:
-      IMAGE_TAG: arch-devel
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        variant:
+          - name: arch
+            target: arch
+          - name: arch-devel
+            target: arch-devel
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configuring git
-        run: |
-          git config --global user.name $GITHUB_USERNAME
-          git config --global user.email $GITHUB_EMAIL
-      - name: Logging in to Docker
-        run: |
-          echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
-      - name: Building the Image
-        run: |
-          docker build -t ghcr.io/${GITHUB_ORG}/${IMAGE_NAME}:${IMAGE_TAG} --target arch-devel .
-          echo "Build Completed Successfully!"
-      - name: Pushing the Image
-        run: |
-          docker push ghcr.io/${GITHUB_ORG}/${IMAGE_NAME}:${IMAGE_TAG}
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GH_TOKEN }}
 
-  minimal:
-    runs-on: ubuntu-22.04
-    env:
-      IMAGE_TAG: arch
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configuring git
-        run: |
-          git config --global user.name $GITHUB_USERNAME
-          git config --global user.email $GITHUB_EMAIL
-      - name: Logging in to Docker
-        run: |
-          echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
-      - name: Building the Image
-        run: |
-          docker build -t ghcr.io/${GITHUB_ORG}/${IMAGE_NAME}:${IMAGE_TAG} --target arch .
-          echo "Build Completed Successfully!"
-      - name: Pushing the Image
-        run: |
-          docker push ghcr.io/${GITHUB_ORG}/${IMAGE_NAME}:${IMAGE_TAG}
+      - name: Build and push ${{ matrix.variant.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          target: ${{ matrix.variant.target }}
+          tags: ghcr.io/${{ env.GITHUB_ORG }}/${{ env.IMAGE_NAME }}:${{ matrix.variant.name }}
